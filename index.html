@@ -3,447 +3,422 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SnapBridge | Transfer Files. Simple.</title>
+    <title>SnapBridge | Transfer..Just F@&ing Transfer.</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #050505;
-            --glass: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --primary: #2563eb;
-            --primary-glow: #3b82f6;
+            --bg: #ffffff;
+            --surface: #f3f4f6;
+            --border: #e5e7eb;
+            --text: #111827;
+            --text-light: #6b7280;
+            --primary: #000000;
             --success: #10b981;
-            --text-main: #ffffff;
-            --text-muted: #94a3b8;
+            --error: #ef4444;
         }
 
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-
         body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
-            color: var(--text-main);
             height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
         }
 
-        .app-container {
+        .container {
+            max-width: 600px;
             width: 100%;
-            max-width: 480px;
-            height: 90vh;
-            background: var(--glass);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid var(--glass-border);
-            border-radius: 32px;
+            margin: 0 auto;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 24px;
-            position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: var(--bg);
         }
 
         header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin: 0;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-badge {
-            display: inline-flex;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 6px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 10px;
-            border: 1px solid var(--glass-border);
         }
 
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 10px #ef4444; transition: 0.3s; }
-        .dot.active { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        h1 { margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.5px; }
 
-        .connection-panel {
+        .status {
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 99px;
+            background: var(--surface);
+            color: var(--text-light);
+        }
+        .status.connected { background: var(--success); color: white; }
+
+        .main-view {
             flex: 1;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: 0.4s ease;
+            overflow-y: auto;
         }
-
-        #qr-container {
-            background: white;
-            padding: 15px;
-            border-radius: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
 
         .hidden { display: none !important; }
 
-        .transfer-panel {
-            display: none;
-            flex: 1;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .drop-zone {
-            flex: 1;
-            border: 2px dashed var(--glass-border);
-            border-radius: 24px;
+        /* Connection Screen */
+        .connect-box {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: 0.3s;
+            flex: 1;
+            text-align: center;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
             margin-bottom: 20px;
-            background: rgba(0,0,0,0.2);
-            position: relative;
-            overflow: hidden;
         }
 
-        .drop-zone:active { border-color: var(--primary); background: rgba(37, 99, 235, 0.1); }
+        .instruction { font-size: 0.9rem; color: var(--text-light); max-width: 250px; line-height: 1.5; }
 
-        .drop-icon { font-size: 3rem; margin-bottom: 15px; opacity: 0.5; }
-        .drop-text { font-size: 0.9rem; color: var(--text-muted); pointer-events: none; }
-
-        .file-input {
-            position: absolute;
-            width: 100%;
+        /* Transfer Screen */
+        .transfer-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
             height: 100%;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            cursor: pointer;
         }
 
-        .chat-input-area {
+        .file-drop {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            position: relative;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .file-drop:active { background: #e5e7eb; border-color: var(--text-light); }
+        
+        .file-input {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+        }
+
+        .chat-box {
             display: flex;
             gap: 10px;
-            margin-top: auto;
+            padding: 10px 0;
+            border-top: 1px solid var(--border);
         }
 
-        .text-input {
+        input[type="text"] {
             flex: 1;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
             padding: 12px;
-            color: white;
-            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--surface);
         }
 
-        .btn-send {
+        button {
+            padding: 0 20px;
             background: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 0 20px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
         }
 
-        .logs {
-            height: 150px;
+        /* Logs / Feed */
+        .feed {
+            flex: 1;
             overflow-y: auto;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 15px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            padding-bottom: 10px;
         }
 
-        .log-item {
-            padding: 10px;
-            background: rgba(255,255,255,0.05);
+        .item {
+            padding: 12px;
             border-radius: 8px;
+            background: var(--surface);
+            font-size: 0.9rem;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
         }
 
-        .download-btn {
-            background: var(--success);
-            color: white;
+        .item.file { background: white; border-left: 4px solid var(--text); }
+        
+        .btn-dl {
             text-decoration: none;
-            padding: 4px 10px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            background: var(--surface);
             border-radius: 6px;
-            font-size: 0.7rem;
         }
 
-        .progress-bar {
-            height: 4px;
-            background: var(--glass-border);
-            border-radius: 2px;
-            margin-top: 5px;
-            width: 100%;
-            overflow: hidden;
-        }
+        .progress-wrap { width: 100%; margin-top: 8px; }
+        .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.1s linear; }
 
-        .progress-fill {
-            height: 100%;
-            background: var(--success);
-            width: 0%;
-            transition: width 0.2s;
-        }
-
-        @media (max-width: 480px) { .app-container { height: 100vh; border-radius: 0; border: none; } }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="container">
     <header>
         <h1>SnapBridge</h1>
-        <div class="status-badge">
-            <div id="status-dot" class="dot"></div>
-            <span id="status-text">Initializing...</span>
-        </div>
+        <div id="status-badge" class="status">Disconnected</div>
     </header>
 
-    <div id="connection-panel" class="connection-panel">
-        <div id="qr-container"></div>
-        <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 20px;">
-            Scan with phone camera to connect automatically.<br>
-            <span style="font-size: 0.75rem; opacity: 0.5;">ID: <span id="my-id-text">...</span></span>
-        </p>
+    <div id="view-connect" class="main-view connect-box">
+        <div id="qrcode"></div>
+        <p class="instruction">Scan with your phone camera to pair devices instantly.</p>
     </div>
 
-    <div id="transfer-panel" class="transfer-panel">
-        <div class="logs" id="logs"></div>
+    <div id="view-transfer" class="main-view hidden">
+        <div class="transfer-area">
+            <div id="feed" class="feed"></div>
+            
+            <div class="file-drop">
+                <span style="font-size: 2rem; margin-bottom: 10px;">+</span>
+                <span style="color: var(--text-light); font-weight: 500;">Tap to send files</span>
+                <input type="file" id="f-input" class="file-input" multiple>
+            </div>
 
-        <div class="drop-zone">
-            <div class="drop-icon">📂</div>
-            <div class="drop-text">Tap to select photos & videos</div>
-            <input type="file" id="file-input" class="file-input" multiple>
-        </div>
-
-        <div class="chat-input-area">
-            <input type="text" id="msg-input" class="text-input" placeholder="Paste link or text...">
-            <button class="btn-send" onclick="sendText()">Send</button>
+            <div class="chat-box">
+                <input type="text" id="t-input" placeholder="Type text or paste links...">
+                <button onclick="sendMsg()">Send</button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+    // --- CONFIGURATION ---
+    const CHUNK_SIZE = 64 * 1024; // 64KB chunks for stability
     const peerConfig = {
-        debug: 1,
+        debug: 0,
         config: {
             'iceServers': [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+                { urls: 'stun:global.stun.twilio.com:3478' }
             ]
         }
     };
 
-    const peer = new Peer(null, peerConfig);
+    // --- STATE ---
+    let peer = null;
     let conn = null;
-    let myId = null;
+    let myId = '';
+    
+    // File Reception State
+    let rxBuffer = [];
+    let rxReceived = 0;
+    let rxMeta = null;
 
-    const els = {
-        statusDot: document.getElementById('status-dot'),
-        statusText: document.getElementById('status-text'),
-        qrPanel: document.getElementById('connection-panel'),
-        transferPanel: document.getElementById('transfer-panel'),
-        logs: document.getElementById('logs'),
-        fileInput: document.getElementById('file-input'),
-        myIdText: document.getElementById('my-id-text')
+    // --- DOM ---
+    const ui = {
+        status: document.getElementById('status-badge'),
+        vConnect: document.getElementById('view-connect'),
+        vTransfer: document.getElementById('view-transfer'),
+        qr: document.getElementById('qrcode'),
+        feed: document.getElementById('feed'),
+        fInput: document.getElementById('f-input'),
+        tInput: document.getElementById('t-input')
     };
 
-    function getUrlParam(name) {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get(name);
-    }
+    // --- INITIALIZATION ---
+    function init() {
+        peer = new Peer(null, peerConfig);
 
-    peer.on('open', (id) => {
-        myId = id;
-        els.myIdText.innerText = id;
-        els.statusText.innerText = "Waiting for peer...";
-        
-        const currentUrl = window.location.href.split('?')[0];
-        const connectUrl = `${currentUrl}?connect=${id}`;
-
-        new QRCode(document.getElementById("qr-container"), {
-            text: connectUrl,
-            width: 180,
-            height: 180,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.L
+        peer.on('open', (id) => {
+            myId = id;
+            generateQR(id);
+            
+            // Check URL for auto-connect
+            const params = new URLSearchParams(window.location.search);
+            const target = params.get('to');
+            if (target) connect(target);
         });
 
-        const targetPeer = getUrlParam('connect');
-        if (targetPeer) {
-            connectToPeer(targetPeer);
-        }
-    });
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConn();
+        });
 
-    peer.on('connection', (connection) => {
-        conn = connection;
-        setupConnection();
-        els.statusText.innerText = "Connected";
-        els.statusDot.classList.add('active');
-        switchView(true);
-    });
+        peer.on('error', (err) => setStatus('Error: ' + err.type));
+    }
 
-    peer.on('error', (err) => {
-        els.statusText.innerText = "Connection Error";
-        console.error(err);
-    });
+    function generateQR(id) {
+        const url = `${window.location.origin}${window.location.pathname}?to=${id}`;
+        new QRCode(ui.qr, {
+            text: url,
+            width: 200, height: 200,
+            colorDark: "#111827", colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
+        });
+    }
 
-    function connectToPeer(id) {
-        els.statusText.innerText = "Connecting to " + id.substr(0,4) + "...";
+    function connect(id) {
+        setStatus('Connecting...');
         conn = peer.connect(id, { reliable: true });
-        setupConnection();
+        setupConn();
     }
 
-    function setupConnection() {
+    function setupConn() {
         conn.on('open', () => {
-            els.statusText.innerText = "Secure Link Active";
-            els.statusDot.classList.add('active');
-            switchView(true);
-        });
-
-        conn.on('data', (data) => {
-            handleIncomingData(data);
+            setStatus('Connected', true);
+            ui.vConnect.classList.add('hidden');
+            ui.vTransfer.classList.remove('hidden');
         });
 
         conn.on('close', () => {
-            els.statusText.innerText = "Disconnected";
-            els.statusDot.classList.remove('active');
-            switchView(false);
+            setStatus('Disconnected');
+            ui.vConnect.classList.remove('hidden');
+            ui.vTransfer.classList.add('hidden');
+            conn = null;
+        });
+
+        conn.on('data', (data) => {
+            if (data.t === 'txt') log(data.val, 'peer');
+            if (data.t === 'meta') startFileReceive(data);
+            if (data.t === 'chunk') handleChunk(data);
         });
     }
 
-    function switchView(isConnected) {
-        if(isConnected) {
-            els.qrPanel.classList.add('hidden');
-            els.transferPanel.style.display = 'flex';
-        } else {
-            els.qrPanel.classList.remove('hidden');
-            els.transferPanel.style.display = 'none';
-        }
+    // --- CORE LOGIC ---
+
+    function sendMsg() {
+        const txt = ui.tInput.value;
+        if (!txt || !conn) return;
+        conn.send({ t: 'txt', val: txt });
+        log(txt, 'me');
+        ui.tInput.value = '';
     }
 
-    function handleIncomingData(data) {
-        if (data.type === 'text') {
-            addLog('text', data.content);
-            if(navigator.clipboard) navigator.clipboard.writeText(data.content);
-        } else if (data.type === 'file-meta') {
-            window.incomingFileMeta = data;
-            addLog('info', `Receiving ${data.name} (${formatBytes(data.size)})...`);
-        } else if (data.type === 'file-chunk') {
-            if(!window.incomingFileBuffer) window.incomingFileBuffer = [];
-            window.incomingFileBuffer.push(data.content);
-            
-            if (data.last) {
-                const blob = new Blob(window.incomingFileBuffer, { type: window.incomingFileMeta.mime });
-                const url = URL.createObjectURL(blob);
-                addLog('file', { name: window.incomingFileMeta.name, url: url });
-                window.incomingFileBuffer = [];
-            }
-        }
-    }
-
-    function sendText() {
-        const input = document.getElementById('msg-input');
-        if (input.value && conn && conn.open) {
-            conn.send({ type: 'text', content: input.value });
-            addLog('sent', input.value);
-            input.value = '';
-        }
-    }
-
-    els.fileInput.addEventListener('change', async (e) => {
+    ui.fInput.addEventListener('change', async (e) => {
         const files = e.target.files;
-        if (!files.length || !conn || !conn.open) return;
+        if (!files.length || !conn) return;
 
-        for (let file of files) {
-            if (file.size > 60 * 1024 * 1024) {
-                alert(`File ${file.name} is too large (Max 60MB)`);
-                continue;
-            }
-
+        for (const file of files) {
+            // Send Metadata
             conn.send({ 
-                type: 'file-meta', 
-                name: file.name, 
-                size: file.size, 
-                mime: file.type 
+                t: 'meta', 
+                n: file.name, 
+                sz: file.size, 
+                type: file.type 
             });
 
-            addLog('info', `Sending ${file.name}...`);
+            log(`Sending ${file.name}...`, 'sys');
             
-            const arrayBuffer = await file.arrayBuffer();
-            const chunkSize = 16 * 1024;
-            const totalChunks = Math.ceil(arrayBuffer.byteLength / chunkSize);
-
-            for (let i = 0; i < totalChunks; i++) {
-                const start = i * chunkSize;
-                const end = start + chunkSize;
-                const chunk = arrayBuffer.slice(start, end);
+            // Read & Chunk
+            const buffer = await file.arrayBuffer();
+            let offset = 0;
+            
+            while (offset < buffer.byteLength) {
+                const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
                 conn.send({
-                    type: 'file-chunk',
-                    content: chunk,
-                    last: i === totalChunks - 1
+                    t: 'chunk',
+                    val: chunk
                 });
+                offset += CHUNK_SIZE;
+                // Tiny delay to prevent network congestion
+                if(offset % (CHUNK_SIZE * 50) === 0) await new Promise(r => setTimeout(r, 10));
             }
-            addLog('sent', `Sent ${file.name}`);
         }
     });
 
-    function addLog(type, content) {
-        const div = document.createElement('div');
-        div.className = 'log-item';
-        
-        if (type === 'text' || type === 'sent') {
-            div.innerHTML = `<span>${type === 'sent' ? 'You:' : 'Peer:'} ${content}</span>`;
-        } else if (type === 'info') {
-            div.innerHTML = `<span style="color:var(--primary-glow)">${content}</span>`;
-        } else if (type === 'file') {
-            div.innerHTML = `
-                <span>📄 ${content.name}</span>
-                <a href="${content.url}" download="${content.name}" class="download-btn">Download</a>
-            `;
+    // --- RECEIVE LOGIC ---
+
+    function startFileReceive(meta) {
+        rxMeta = meta;
+        rxBuffer = [];
+        rxReceived = 0;
+        log(`Receiving ${meta.n}...`, 'sys', true);
+    }
+
+    function handleChunk(data) {
+        rxBuffer.push(data.val);
+        rxReceived += data.val.byteLength;
+
+        // update progress if needed
+        const percent = (rxReceived / rxMeta.sz) * 100;
+        updateProgress(percent);
+
+        if (rxReceived >= rxMeta.sz) {
+            const blob = new Blob(rxBuffer, { type: rxMeta.type });
+            const url = URL.createObjectURL(blob);
+            finishFile(rxMeta.n, url);
+            rxBuffer = []; // Clear memory
         }
-        els.logs.prepend(div);
     }
 
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    // --- UI HELPERS ---
+
+    function setStatus(msg, good = false) {
+        ui.status.innerText = msg;
+        if (good) ui.status.classList.add('connected');
+        else ui.status.classList.remove('connected');
     }
+
+    function log(txt, type, isProgress = false) {
+        const div = document.createElement('div');
+        div.className = `item ${type === 'peer' ? 'file' : ''}`;
+        
+        if (isProgress) {
+            div.id = 'current-progress';
+            div.innerHTML = `
+                <div style="width:100%">
+                    <div>${txt}</div>
+                    <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="p-fill"></div></div></div>
+                </div>`;
+        } else {
+            div.innerText = type === 'me' ? `You: ${txt}` : txt;
+        }
+        ui.feed.prepend(div);
+    }
+
+    function updateProgress(pct) {
+        const fill = document.getElementById('p-fill');
+        if (fill) fill.style.width = `${pct}%`;
+    }
+
+    function finishFile(name, url) {
+        const prog = document.getElementById('current-progress');
+        if(prog) prog.remove();
+
+        const div = document.createElement('div');
+        div.className = 'item file';
+        div.innerHTML = `
+            <span>📄 ${name}</span>
+            <a href="${url}" download="${name}" class="btn-dl">Save</a>
+        `;
+        ui.feed.prepend(div);
+    }
+
+    // Start
+    init();
+
 </script>
-
 </body>
 </html>
+
