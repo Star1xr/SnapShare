@@ -2,160 +2,446 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapBridge | Send files like Ironman</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SnapBridge | Transfer Files. Simple.</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass: rgba(255, 255, 255, 0.1);
-            --border: rgba(255, 255, 255, 0.2);
-            --accent: #00f2fe;
+            --bg-dark: #050505;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #2563eb;
+            --primary-glow: #3b82f6;
+            --success: #10b981;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
         }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top right, #1e1e2f, #0f0c29);
-            color: white;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
 
-        .container {
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 90vh;
             background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            padding: 2.5rem;
-            width: 90%;
-            max-width: 400px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
         }
 
-        h1 { font-weight: 700; font-size: 1.8rem; margin-bottom: 0.5rem; background: linear-gradient(to right, #4facfe, #00f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p { font-size: 0.85rem; opacity: 0.6; margin-bottom: 2rem; }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-        #qrcode {
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 10px #ef4444; transition: 0.3s; }
+        .dot.active { background: var(--success); box-shadow: 0 0 10px var(--success); }
+
+        .connection-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.4s ease;
+        }
+
+        #qr-container {
             background: white;
-            padding: 10px;
-            border-radius: 12px;
-            display: inline-block;
-            margin-bottom: 1.5rem;
+            padding: 15px;
+            border-radius: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
         }
 
-        .id-badge {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            background: rgba(0,0,0,0.3);
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-            border: 1px solid var(--border);
-            word-break: break-all;
-        }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
 
-        input, textarea {
+        .hidden { display: none !important; }
+
+        .transfer-panel {
+            display: none;
+            flex: 1;
+            flex-direction: column;
             width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: rgba(255,255,255,0.05);
-            color: white;
-            box-sizing: border-box;
-            outline: none;
         }
 
-        button {
+        .drop-zone {
+            flex: 1;
+            border: 2px dashed var(--glass-border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:active { border-color: var(--primary); background: rgba(37, 99, 235, 0.1); }
+
+        .drop-icon { font-size: 3rem; margin-bottom: 15px; opacity: 0.5; }
+        .drop-text { font-size: 0.9rem; color: var(--text-muted); pointer-events: none; }
+
+        .file-input {
+            position: absolute;
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(45deg, #4facfe, #00f2fe);
-            color: #0f0c29;
-            font-weight: 700;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        button:hover { opacity: 0.9; transform: scale(1.02); }
-        .status { font-size: 0.75rem; margin-top: 20px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .text-input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            color: white;
+            font-family: inherit;
+        }
+
+        .btn-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logs {
+            height: 150px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-item {
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .download-btn {
+            background: var(--success);
+            color: white;
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--glass-border);
+            border-radius: 2px;
+            margin-top: 5px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.2s;
+        }
+
+        @media (max-width: 480px) { .app-container { height: 100vh; border-radius: 0; border: none; } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>SnapBridge</h1>
-    <p>Seamless P2P Data Transfer</p>
-    
-    <div id="qrcode"></div>
-    <div id="my-id-display" class="id-badge">Generating ID...</div>
-    
-    <input type="text" id="peer-id-input" placeholder="Enter Destination ID">
-    <button onclick="connectToPeer()">Connect Device</button>
+<div class="app-container">
+    <header>
+        <h1>SnapBridge</h1>
+        <div class="status-badge">
+            <div id="status-dot" class="dot"></div>
+            <span id="status-text">Initializing...</span>
+        </div>
+    </header>
 
-    <div style="margin: 20px 0; height: 1px; background: var(--border);"></div>
+    <div id="connection-panel" class="connection-panel">
+        <div id="qr-container"></div>
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 20px;">
+            Scan with phone camera to connect automatically.<br>
+            <span style="font-size: 0.75rem; opacity: 0.5;">ID: <span id="my-id-text">...</span></span>
+        </p>
+    </div>
 
-    <textarea id="message-input" rows="3" placeholder="Type or paste anything..."></textarea>
-    <button onclick="sendMessage()">Send Instant</button>
-    
-    <div id="status" class="status">System Ready</div>
+    <div id="transfer-panel" class="transfer-panel">
+        <div class="logs" id="logs"></div>
+
+        <div class="drop-zone">
+            <div class="drop-icon">📂</div>
+            <div class="drop-text">Tap to select photos & videos</div>
+            <input type="file" id="file-input" class="file-input" multiple>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="msg-input" class="text-input" placeholder="Paste link or text...">
+            <button class="btn-send" onclick="sendText()">Send</button>
+        </div>
+    </div>
 </div>
 
 <script>
-    const peer = new Peer();
-    let conn;
+    const peerConfig = {
+        debug: 1,
+        config: {
+            'iceServers': [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        }
+    };
+
+    const peer = new Peer(null, peerConfig);
+    let conn = null;
+    let myId = null;
+
+    const els = {
+        statusDot: document.getElementById('status-dot'),
+        statusText: document.getElementById('status-text'),
+        qrPanel: document.getElementById('connection-panel'),
+        transferPanel: document.getElementById('transfer-panel'),
+        logs: document.getElementById('logs'),
+        fileInput: document.getElementById('file-input'),
+        myIdText: document.getElementById('my-id-text')
+    };
+
+    function getUrlParam(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
 
     peer.on('open', (id) => {
-        document.getElementById('my-id-display').innerText = id;
-        new QRCode(document.getElementById("qrcode"), {
-            text: id,
-            width: 128,
-            height: 128,
+        myId = id;
+        els.myIdText.innerText = id;
+        els.statusText.innerText = "Waiting for peer...";
+        
+        const currentUrl = window.location.href.split('?')[0];
+        const connectUrl = `${currentUrl}?connect=${id}`;
+
+        new QRCode(document.getElementById("qr-container"), {
+            text: connectUrl,
+            width: 180,
+            height: 180,
             colorDark : "#000000",
-            colorLight : "#ffffff"
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.L
         });
+
+        const targetPeer = getUrlParam('connect');
+        if (targetPeer) {
+            connectToPeer(targetPeer);
+        }
     });
 
     peer.on('connection', (connection) => {
         conn = connection;
-        handleData();
-        updateStatus("Connected!");
+        setupConnection();
+        els.statusText.innerText = "Connected";
+        els.statusDot.classList.add('active');
+        switchView(true);
     });
 
-    function connectToPeer() {
-        const peerId = document.getElementById('peer-id-input').value;
-        if (peerId) {
-            conn = peer.connect(peerId);
-            handleData();
-            updateStatus("Connecting...");
-        }
+    peer.on('error', (err) => {
+        els.statusText.innerText = "Connection Error";
+        console.error(err);
+    });
+
+    function connectToPeer(id) {
+        els.statusText.innerText = "Connecting to " + id.substr(0,4) + "...";
+        conn = peer.connect(id, { reliable: true });
+        setupConnection();
     }
 
-    function handleData() {
-        conn.on('open', () => updateStatus("Link Active"));
+    function setupConnection() {
+        conn.on('open', () => {
+            els.statusText.innerText = "Secure Link Active";
+            els.statusDot.classList.add('active');
+            switchView(true);
+        });
+
         conn.on('data', (data) => {
-            document.getElementById('message-input').value = data;
-            updateStatus("Data Received!");
+            handleIncomingData(data);
+        });
+
+        conn.on('close', () => {
+            els.statusText.innerText = "Disconnected";
+            els.statusDot.classList.remove('active');
+            switchView(false);
         });
     }
 
-    function sendMessage() {
-        const msg = document.getElementById('message-input').value;
-        if (conn && conn.open) {
-            conn.send(msg);
-            updateStatus("Data Sent!");
+    function switchView(isConnected) {
+        if(isConnected) {
+            els.qrPanel.classList.add('hidden');
+            els.transferPanel.style.display = 'flex';
         } else {
-            alert("No active connection!");
+            els.qrPanel.classList.remove('hidden');
+            els.transferPanel.style.display = 'none';
         }
     }
 
-    function updateStatus(text) {
-        document.getElementById('status').innerText = text;
+    function handleIncomingData(data) {
+        if (data.type === 'text') {
+            addLog('text', data.content);
+            if(navigator.clipboard) navigator.clipboard.writeText(data.content);
+        } else if (data.type === 'file-meta') {
+            window.incomingFileMeta = data;
+            addLog('info', `Receiving ${data.name} (${formatBytes(data.size)})...`);
+        } else if (data.type === 'file-chunk') {
+            if(!window.incomingFileBuffer) window.incomingFileBuffer = [];
+            window.incomingFileBuffer.push(data.content);
+            
+            if (data.last) {
+                const blob = new Blob(window.incomingFileBuffer, { type: window.incomingFileMeta.mime });
+                const url = URL.createObjectURL(blob);
+                addLog('file', { name: window.incomingFileMeta.name, url: url });
+                window.incomingFileBuffer = [];
+            }
+        }
+    }
+
+    function sendText() {
+        const input = document.getElementById('msg-input');
+        if (input.value && conn && conn.open) {
+            conn.send({ type: 'text', content: input.value });
+            addLog('sent', input.value);
+            input.value = '';
+        }
+    }
+
+    els.fileInput.addEventListener('change', async (e) => {
+        const files = e.target.files;
+        if (!files.length || !conn || !conn.open) return;
+
+        for (let file of files) {
+            if (file.size > 60 * 1024 * 1024) {
+                alert(`File ${file.name} is too large (Max 60MB)`);
+                continue;
+            }
+
+            conn.send({ 
+                type: 'file-meta', 
+                name: file.name, 
+                size: file.size, 
+                mime: file.type 
+            });
+
+            addLog('info', `Sending ${file.name}...`);
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const chunkSize = 16 * 1024;
+            const totalChunks = Math.ceil(arrayBuffer.byteLength / chunkSize);
+
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * chunkSize;
+                const end = start + chunkSize;
+                const chunk = arrayBuffer.slice(start, end);
+                conn.send({
+                    type: 'file-chunk',
+                    content: chunk,
+                    last: i === totalChunks - 1
+                });
+            }
+            addLog('sent', `Sent ${file.name}`);
+        }
+    });
+
+    function addLog(type, content) {
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        
+        if (type === 'text' || type === 'sent') {
+            div.innerHTML = `<span>${type === 'sent' ? 'You:' : 'Peer:'} ${content}</span>`;
+        } else if (type === 'info') {
+            div.innerHTML = `<span style="color:var(--primary-glow)">${content}</span>`;
+        } else if (type === 'file') {
+            div.innerHTML = `
+                <span>📄 ${content.name}</span>
+                <a href="${content.url}" download="${content.name}" class="download-btn">Download</a>
+            `;
+        }
+        els.logs.prepend(div);
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 </script>
 
