@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapBridge | Send files like Ironman</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.2);
+            --accent: #00f2fe;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #1e1e2f, #0f0c29);
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        h1 { font-weight: 700; font-size: 1.8rem; margin-bottom: 0.5rem; background: linear-gradient(to right, #4facfe, #00f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { font-size: 0.85rem; opacity: 0.6; margin-bottom: 2rem; }
+
+        #qrcode {
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .id-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            word-break: break-all;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            color: #0f0c29;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .status { font-size: 0.75rem; margin-top: 20px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SnapBridge</h1>
+    <p>Seamless P2P Data Transfer</p>
+    
+    <div id="qrcode"></div>
+    <div id="my-id-display" class="id-badge">Generating ID...</div>
+    
+    <input type="text" id="peer-id-input" placeholder="Enter Destination ID">
+    <button onclick="connectToPeer()">Connect Device</button>
+
+    <div style="margin: 20px 0; height: 1px; background: var(--border);"></div>
+
+    <textarea id="message-input" rows="3" placeholder="Type or paste anything..."></textarea>
+    <button onclick="sendMessage()">Send Instant</button>
+    
+    <div id="status" class="status">System Ready</div>
+</div>
+
+<script>
+    const peer = new Peer();
+    let conn;
+
+    peer.on('open', (id) => {
+        document.getElementById('my-id-display').innerText = id;
+        new QRCode(document.getElementById("qrcode"), {
+            text: id,
+            width: 128,
+            height: 128,
+            colorDark : "#000000",
+            colorLight : "#ffffff"
+        });
+    });
+
+    peer.on('connection', (connection) => {
+        conn = connection;
+        handleData();
+        updateStatus("Connected!");
+    });
+
+    function connectToPeer() {
+        const peerId = document.getElementById('peer-id-input').value;
+        if (peerId) {
+            conn = peer.connect(peerId);
+            handleData();
+            updateStatus("Connecting...");
+        }
+    }
+
+    function handleData() {
+        conn.on('open', () => updateStatus("Link Active"));
+        conn.on('data', (data) => {
+            document.getElementById('message-input').value = data;
+            updateStatus("Data Received!");
+        });
+    }
+
+    function sendMessage() {
+        const msg = document.getElementById('message-input').value;
+        if (conn && conn.open) {
+            conn.send(msg);
+            updateStatus("Data Sent!");
+        } else {
+            alert("No active connection!");
+        }
+    }
+
+    function updateStatus(text) {
+        document.getElementById('status').innerText = text;
+    }
+</script>
+
+</body>
+</html>
