@@ -3,308 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SnapBridge Elite | Secure P2P</title>
+    <title>SnapBridge Ultra | High-Speed Bridge</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #030303;
-            --accent: #3b82f6;
-            --success: #10b981;
-            --glass: rgba(255, 255, 255, 0.03);
+            --accent: #00ff88;
+            --accent-glow: rgba(0, 255, 136, 0.3);
+            --glass: rgba(255, 255, 255, 0.05);
             --border: rgba(255, 255, 255, 0.1);
         }
 
-        * { box-sizing: border-box; outline: none; transition: all 0.2s ease; }
-        
         body {
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: #fff;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: #fff;
+            height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
 
-        .app-shell {
-            width: 100%;
-            max-width: 500px;
-            height: 92vh;
-            background: var(--glass);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid var(--border);
-            border-radius: 40px;
-            display: flex;
-            flex-direction: column;
-            padding: 30px;
-            box-shadow: 0 0 100px rgba(59, 130, 246, 0.1);
+        .main-card {
+            width: 100%; max-width: 500px; height: 95vh; background: var(--glass);
+            backdrop-filter: blur(30px); border: 1px solid var(--border); border-radius: 40px;
+            display: flex; flex-direction: column; padding: 30px; box-shadow: 0 0 100px rgba(0,0,0,0.8);
         }
 
-        header { text-align: center; margin-bottom: 30px; }
-        h1 { font-weight: 800; font-size: 1.7rem; margin: 0; background: linear-gradient(to bottom, #fff, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #111;
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 15px;
-            border: 1px solid var(--border);
-        }
-
-        .indicator { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
-        .indicator.online { background: var(--success); box-shadow: 0 0 12px var(--success); }
-
-        /* Connection UI */
-        .conn-ui { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #qr-box { background: #fff; padding: 15px; border-radius: 25px; margin-bottom: 25px; border: 5px solid #fff; }
+        .header { text-align: left; margin-bottom: 30px; }
+        .header h1 { font-size: 2rem; margin: 0; font-weight: 800; letter-spacing: -1px; }
         
         .code-display {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem;
-            letter-spacing: 4px;
-            color: var(--accent);
-            background: rgba(255,255,255,0.05);
-            padding: 10px 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
+            background: rgba(0,0,0,0.4); border-radius: 20px; padding: 25px;
+            text-align: center; border: 1px solid var(--border); margin-bottom: 25px;
         }
 
-        .input-group { width: 100%; display: flex; gap: 10px; margin-top: 10px; }
-        input { flex: 1; background: #111; border: 1px solid var(--border); border-radius: 15px; padding: 15px; color: #fff; font-family: 'JetBrains Mono'; }
+        .code-label { font-size: 0.7rem; text-transform: uppercase; color: var(--accent); letter-spacing: 2px; margin-bottom: 10px; }
+        .short-code { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 700; color: #fff; text-shadow: 0 0 15px var(--accent-glow); }
+
+        .join-area { display: flex; gap: 10px; margin-bottom: 30px; }
+        .input-code {
+            flex: 1; background: var(--glass); border: 1px solid var(--border);
+            border-radius: 15px; padding: 15px; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;
+        }
+
+        .btn {
+            background: #fff; color: #000; border: none; border-radius: 15px;
+            padding: 15px 25px; font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .btn:hover { transform: scale(1.05); background: var(--accent); }
+
+        .transfer-zone { display: none; flex: 1; flex-direction: column; overflow: hidden; }
         
-        button.primary-btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 15px;
-            font-weight: 700;
-            cursor: pointer;
+        .log-container {
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+            margin-bottom: 20px; padding-right: 5px;
         }
 
-        /* Transfer UI */
-        .transfer-ui { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-        .log-container { flex: 1; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; }
-
-        .log-card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 15px;
+        .item {
+            background: rgba(255,255,255,0.03); border-radius: 15px; padding: 15px;
+            border: 1px solid var(--border); transition: 0.3s;
         }
 
-        .progress-track { height: 6px; background: #222; border-radius: 3px; margin-top: 10px; overflow: hidden; }
-        .progress-bar { height: 100%; background: var(--accent); width: 0%; }
-        .progress-bar.finished { background: var(--success); }
+        .progress-wrapper { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: var(--accent); transition: width 0.1s; box-shadow: 0 0 10px var(--accent-glow); }
 
-        .drop-zone {
-            height: 100px;
-            border: 2px dashed var(--border);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: rgba(59, 130, 246, 0.05);
-        }
+        .success-text { color: var(--accent); font-weight: bold; font-size: 0.8rem; }
 
-        .file-label { font-size: 0.8rem; opacity: 0.6; }
-        #file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .action-bar { display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 20px; border: 1px solid var(--border); }
+        .file-label { flex: 1; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9rem; }
 
-        .hidden { display: none !important; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="app-shell">
-    <header>
-        <h1>SnapBridge Elite</h1>
-        <div class="status-pill">
-            <div id="ind" class="indicator"></div>
-            <span id="stat">Disconnected</span>
-        </div>
-    </header>
+<div class="main-card">
+    <div class="header">
+        <h1>SnapBridge <span style="color:var(--accent)">U</span></h1>
+        <div id="status" style="font-size: 0.75rem; opacity: 0.5;">Initializing Engine...</div>
+    </div>
 
-    <div id="conn-panel" class="conn-ui">
-        <div id="qr-box"></div>
-        <div class="code-display" id="my-code">------</div>
-        <div class="input-group">
-            <input type="text" id="target-id" placeholder="Enter 6-char code" maxlength="6">
-            <button class="primary-btn" onclick="initConnect()">Link</button>
+    <div id="setup-view">
+        <div class="code-display">
+            <div class="code-label">Your Local Access Code</div>
+            <div id="my-code" class="short-code">------</div>
+        </div>
+
+        <div class="join-area">
+            <input type="text" id="target-id" class="input-code" placeholder="Enter 6-char code" maxlength="6">
+            <button class="btn" onclick="connect()">Connect</button>
         </div>
     </div>
 
-    <div id="main-panel" class="transfer-ui">
-        <div class="log-container" id="logs"></div>
-        <div class="drop-zone">
-            <span class="file-label">Drop files or click to upload</span>
-            <input type="file" id="file-input" multiple>
-        </div>
-        <div class="input-group">
-            <input type="text" id="text-msg" placeholder="Share a link or note...">
-            <button class="primary-btn" onclick="sendText()">Send</button>
+    <div id="transfer-view" class="transfer-zone">
+        <div class="log-container" id="log-container"></div>
+        
+        <div class="action-bar">
+            <label class="file-label">
+                <input type="file" id="file-input" class="hidden" multiple>
+                <span>📁 Upload Media</span>
+            </label>
+            <input type="text" id="text-input" class="input-code" style="margin:0; padding:10px" placeholder="Type link...">
+            <button class="btn" style="padding:10px 20px" onclick="sendMsg()">Send</button>
         </div>
     </div>
 </div>
 
 <script>
-    const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
-    const myShortCode = generateCode();
-    
-    // PeerJS initialization with custom ID (6 char)
-    const peer = new Peer(myShortCode, {
-        config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }]}
+    const generateShortId = () => {
+        const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+        let result = '';
+        for (let i = 0; i < 6; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+        return result;
+    };
+
+    const myId = generateShortId();
+    document.getElementById('my-code').innerText = myId;
+
+    const peer = new Peer(myId, {
+        config: {'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }]}
     });
 
-    let activeConn = null;
+    let conn;
     let fileBuffers = {};
 
-    peer.on('open', (id) => {
-        document.getElementById('my-code').innerText = id;
-        const shareUrl = `${window.location.href.split('?')[0]}?c=${id}`;
-        new QRCode(document.getElementById("qr-box"), { text: shareUrl, width: 140, height: 140 });
+    peer.on('open', () => document.getElementById('status').innerText = "System Live - Ready to Bridge");
+    peer.on('connection', c => { conn = c; setupPeer(); });
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('c')) initConnect(urlParams.get('c'));
-    });
-
-    peer.on('connection', conn => {
-        activeConn = conn;
-        setupEvents();
-    });
-
-    function initConnect(target = null) {
-        const id = target || document.getElementById('target-id').value.toUpperCase();
-        if (!id) return;
-        activeConn = peer.connect(id, { reliable: true });
-        setupEvents();
+    function connect() {
+        const target = document.getElementById('target-id').value.toLowerCase();
+        if (target.length === 6) {
+            conn = peer.connect(target, { reliable: false }); // High speed mode
+            setupPeer();
+        }
     }
 
-    function setupEvents() {
-        activeConn.on('open', () => {
-            // Send sync pulse
-            activeConn.send({ type: 'HEARTBEAT' });
-            renderUI(true);
+    function setupPeer() {
+        conn.on('open', () => {
+            document.getElementById('setup-view').classList.add('hidden');
+            document.getElementById('transfer-view').style.display = 'flex';
+            document.getElementById('status').innerText = "Encrypted Connection Established";
+            conn.send({ type: 'init' });
         });
 
-        activeConn.on('data', data => {
-            if (data.type === 'HEARTBEAT') renderUI(true);
-            else handleIncoming(data);
+        conn.on('data', data => {
+            if (data.type === 'init') {
+                document.getElementById('setup-view').classList.add('hidden');
+                document.getElementById('transfer-view').style.display = 'flex';
+            }
+            handleIncoming(data);
         });
-
-        activeConn.on('close', () => renderUI(false));
-    }
-
-    function renderUI(connected) {
-        document.getElementById('ind').className = connected ? 'indicator online' : 'indicator';
-        document.getElementById('stat').innerText = connected ? 'Secure Link' : 'Disconnected';
-        document.getElementById('conn-panel').classList.toggle('hidden', connected);
-        document.getElementById('main-panel').style.display = connected ? 'flex' : 'none';
     }
 
     function handleIncoming(data) {
-        if (data.type === 'msg') createCard('Peer', data.val);
+        if (data.type === 'msg') addLog('Peer', data.val);
         if (data.type === 'file-start') {
-            fileBuffers[data.id] = [];
-            createFileCard(data.id, data.name, 'Receiving');
+            fileBuffers[data.id] = { chunks: [], meta: data };
+            renderFileItem(data.id, data.name, 'downloading');
         }
-        if (data.type === 'file-raw') {
-            fileBuffers[data.id].push(data.chunk);
-            updateProgress(data.id, data.p);
-            if (data.p === 100) {
-                const blob = new Blob(fileBuffers[data.id], { type: data.mime });
-                finalizeFileCard(data.id, URL.createObjectURL(blob));
-            }
-        }
-    }
+        if (data.type === 'file-chunk') {
+            const fb = fileBuffers[data.id];
+            fb.chunks.push(data.chunk);
+            const p = Math.round((fb.chunks.length / data.total) * 100);
+            updateProgress(data.id, p);
 
-    function sendText() {
-        const el = document.getElementById('text-msg');
-        if (el.value && activeConn?.open) {
-            activeConn.send({ type: 'msg', val: el.value });
-            createCard('You', el.value);
-            el.value = '';
+            if (fb.chunks.length === data.total) {
+                const blob = new Blob(fb.chunks, { type: fb.meta.mime });
+                finalizeFile(data.id, URL.createObjectURL(blob));
+            }
         }
     }
 
     document.getElementById('file-input').addEventListener('change', async (e) => {
         for (let file of e.target.files) {
-            const fid = 'f' + Math.random().toString(36).substr(2, 5);
-            createFileCard(fid, file.name, 'Sending');
+            const fid = Math.random().toString(36).substr(2, 6);
+            renderFileItem(fid, file.name, 'uploading');
             
-            activeConn.send({ type: 'file-start', id: fid, name: file.name });
+            conn.send({ type: 'file-start', id: fid, name: file.name, mime: file.type, total: Math.ceil(file.size / 16384) });
 
-            const sliceSize = 65536; // 64KB Optimization
-            let offset = 0;
+            const reader = file.stream().getReader();
+            let index = 0;
+            const total = Math.ceil(file.size / 16384);
 
-            while (offset < file.size) {
-                const chunk = file.slice(offset, offset + sliceSize);
-                const buffer = await chunk.arrayBuffer();
-                offset += sliceSize;
-                const p = Math.min(100, Math.round((offset / file.size) * 100));
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
                 
-                activeConn.send({
-                    type: 'file-raw', id: fid, chunk: buffer, 
-                    p: p, name: file.name, mime: file.type
-                });
-                updateProgress(fid, p);
+                // Chunking for zero-crash memory management
+                let offset = 0;
+                while (offset < value.length) {
+                    const chunk = value.slice(offset, offset + 16384);
+                    conn.send({ type: 'file-chunk', id: fid, chunk: chunk, index: index, total: total });
+                    offset += 16384;
+                    index++;
+                    updateProgress(fid, Math.round((index/total)*100));
+                }
             }
-            // Mark as Success Sent
-            const label = document.querySelector(`#label-${fid}`);
-            if(label) {
-                label.innerText = 'Success! Sent';
-                label.style.color = 'var(--success)';
-            }
-            document.querySelector(`#bar-${fid}`).classList.add('finished');
+            document.getElementById(`status-${fid}`).innerHTML = '<span class="success-text">✓ SENT SUCCESSFUL</span>';
         }
     });
 
-    function createFileCard(id, name, status) {
+    function sendMsg() {
+        const val = document.getElementById('text-input').value;
+        if (val && conn?.open) {
+            conn.send({ type: 'msg', val });
+            addLog('You', val);
+            document.getElementById('text-input').value = '';
+        }
+    }
+
+    function renderFileItem(id, name, mode) {
         const div = document.createElement('div');
-        div.className = 'log-card';
+        div.className = 'item';
+        div.id = `item-${id}`;
         div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem">
-                <span>${name}</span>
-                <span id="label-${id}" style="font-weight:700">${status}...</span>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                <span style="font-size:0.9rem; font-weight:600">${name}</span>
+                <div id="status-${id}" style="font-size:0.7rem; opacity:0.6">${mode.toUpperCase()}...</div>
             </div>
-            <div class="progress-track"><div id="bar-${id}" class="progress-bar"></div></div>
-            <div id="link-${id}" class="hidden" style="margin-top:10px"></div>
+            <div class="progress-wrapper"><div id="bar-${id}" class="progress-bar"></div></div>
         `;
-        document.getElementById('logs').prepend(div);
+        document.getElementById('log-container').prepend(div);
     }
 
-    function updateProgress(id, p) {
+    function updateProgress(id, percent) {
         const bar = document.getElementById(`bar-${id}`);
-        if (bar) bar.style.width = p + '%';
+        if (bar) bar.style.width = percent + '%';
     }
 
-    function finalizeFileCard(id, url) {
-        const label = document.getElementById(`label-${id}`);
-        const linkBox = document.getElementById(`link-${id}`);
-        label.innerText = 'Success! Received';
-        label.style.color = 'var(--success)';
-        document.getElementById(`bar-${id}`).classList.add('finished');
-        linkBox.classList.remove('hidden');
-        linkBox.innerHTML = `<a href="${url}" download="received_file" style="color:var(--accent); text-decoration:none; font-weight:700">DOWNLOAD FILE</a>`;
+    function finalizeFile(id, url) {
+        const stat = document.getElementById(`status-${id}`);
+        const name = document.getElementById(`item-${id}`).querySelector('span').innerText;
+        stat.innerHTML = `<a href="${url}" download="${name}" class="success-text" style="text-decoration:none">✓ SAVE FILE</a>`;
+        document.getElementById(`bar-${id}`).style.background = 'var(--accent)';
     }
 
-    function createCard(who, text) {
+    function addLog(who, msg) {
         const div = document.createElement('div');
-        div.className = 'log-card';
-        div.innerHTML = `<strong style="color:var(--accent)">${who}:</strong> <span style="margin-left:8px; opacity:0.8">${text}</span>`;
-        document.getElementById('logs').prepend(div);
+        div.className = 'item';
+        div.innerHTML = `<div style="font-size:0.7rem; color:var(--accent); margin-bottom:5px">${who.toUpperCase()}</div><div>${msg}</div>`;
+        document.getElementById('log-container').prepend(div);
     }
 </script>
+
 </body>
 </html>
